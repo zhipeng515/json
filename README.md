@@ -10,6 +10,7 @@
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/nlohmann/json/master/LICENSE.MIT)
 [![Github Releases](https://img.shields.io/github/release/nlohmann/json.svg)](https://github.com/nlohmann/json/releases)
 [![Github Issues](https://img.shields.io/github/issues/nlohmann/json.svg)](http://github.com/nlohmann/json/issues)
+[![Average time to resolve an issue](http://isitmaintained.com/badge/resolution/nlohmann/json.svg)](http://isitmaintained.com/project/nlohmann/json "Average time to resolve an issue")
 [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/289/badge)](https://bestpractices.coreinfrastructure.org/projects/289)
 
 - [Design goals](#design-goals)
@@ -64,6 +65,8 @@ using json = nlohmann::json;
 to the files you want to use JSON objects. That's it. Do not forget to set the necessary switches to enable C++11 (e.g., `-std=c++11` for GCC and Clang).
 
 :beer: If you are using OS X and [Homebrew](http://brew.sh), just type `brew tap nlohmann/json` and `brew install nlohmann_json` and you're set. If you want the bleeding edge rather than the latest release, use `brew install nlohmann_json --HEAD`.
+
+If you are using the [Meson Build System](http://mesonbuild.com), then you can wrap this repo as a subproject.
 
 :warning: [Version 3.0.0](https://github.com/nlohmann/json/wiki/Road-toward-3.0.0) is currently under development. Branch `develop` is used for the ongoing work and is probably **unstable**. Please use the `master` branch for the last stable version 2.1.1.
 
@@ -517,9 +520,9 @@ namespace ns {
     }
 
     void from_json(const json& j, person& p) {
-        p.name = j["name"].get<std::string>();
-        p.address = j["address"].get<std::string>();
-        p.age = j["age"].get<int>();
+        p.name = j.at("name").get<std::string>();
+        p.address = j.at("address").get<std::string>();
+        p.age = j.at("age").get<int>();
     }
 } // namespace ns
 ```
@@ -531,6 +534,7 @@ Some important things:
 
 * Those methods **MUST** be in your type's namespace (which can be the global namespace), or the library will not be able to locate them (in this example, they are in namespace `ns`, where `person` is defined).
 * When using `get<your_type>()`, `your_type` **MUST** be [DefaultConstructible](http://en.cppreference.com/w/cpp/concept/DefaultConstructible). (There is a way to bypass this requirement described later.)
+* In function `from_json`, use function [`at()`](https://nlohmann.github.io/json/classnlohmann_1_1basic__json_a93403e803947b86f4da2d1fb3345cf2c.html#a93403e803947b86f4da2d1fb3345cf2c) to access the object values rather than `operator[]`. In case a key does not exists, `at` throws an exception that you can handle, whereas `operator[]` exhibits undefined behavior.
 
 #### How do I convert third-party types?
 
@@ -706,6 +710,7 @@ Though it's 2016 already, the support for C++11 is still a bit sparse. Currently
 - GCC 4.9 - 6.0 (and possibly later)
 - Clang 3.4 - 3.9 (and possibly later)
 - Microsoft Visual C++ 2015 / Build Tools 14.0.25123.0 (and possibly later)
+- Microsoft Visual C++ 2017 / Build Tools 15.1.548.43366 (and possibly later)
 
 I would be happy to learn about other compilers/versions.
 
@@ -743,8 +748,9 @@ The following compilers are currently used in continuous integration at [Travis]
 | Clang Xcode 8.0 | Darwin Kernel Version 15.6.0 | Apple LLVM version 8.0.0 (clang-800.0.38) |
 | Clang Xcode 8.1 | Darwin Kernel Version 16.1.0 (macOS 10.12.1) | Apple LLVM version 8.0.0 (clang-800.0.42.1) |
 | Clang Xcode 8.2 | Darwin Kernel Version 16.1.0 (macOS 10.12.1) | Apple LLVM version 8.0.0 (clang-800.0.42.1) |
+| Clang Xcode 8.3 | Darwin Kernel Version 16.5.0 (macOS 10.12.4) | Apple LLVM version 8.1.0 (clang-802.0.38) |
 | Visual Studio 14 2015 | Windows Server 2012 R2 (x64) | Microsoft (R) Build Engine version 14.0.25123.0 | 
-
+| Visual Studio 2017 | Windows Server 2016 | Microsoft (R) Build Engine version 15.1.548.43366 |
 
 ## License
 
@@ -809,7 +815,7 @@ I deeply appreciate the help of the following people.
 - [Stefan](https://github.com/5tefan) fixed a minor issue in the documentation.
 - [Vasil Dimov](https://github.com/vasild) fixed the documentation regarding conversions from `std::multiset`.
 - [ChristophJud](https://github.com/ChristophJud) overworked the CMake files to ease project inclusion.
-- [Vladimir Petrigo](https://github.com/vpetrigo) made a SFINAE hack more readable.
+- [Vladimir Petrigo](https://github.com/vpetrigo) made a SFINAE hack more readable and added Visual Studio 17 to the build matrix.
 - [Denis Andrejew](https://github.com/seeekr) fixed a grammar issue in the README file.
 - [Pierre-Antoine Lacaze](https://github.com/palacaze) found a subtle bug in the `dump()` function.
 - [TurpentineDistillery](https://github.com/TurpentineDistillery) pointed to [`std::locale::classic()`](http://en.cppreference.com/w/cpp/locale/locale/classic) to avoid too much locale joggling, found some nice performance improvements in the parser, improved the benchmarking code, and realized locale-independent number parsing and printing.
@@ -828,14 +834,20 @@ I deeply appreciate the help of the following people.
 - [rswanson-ihi](https://github.com/rswanson-ihi) noted a typo in the README.
 - [Mihai Stan](https://github.com/stanmihai4) fixed a bug in the comparison with `nullptr`s.
 - [Tushar Maheshwari](https://github.com/tusharpm) added [cotire](https://github.com/sakra/cotire) support to speed up the compilation.
-- [TedLyngmo](https://github.com/TedLyngmo) noted a typo in the README and fixed some `-Weffc++` warnings.
+- [TedLyngmo](https://github.com/TedLyngmo) noted a typo in the README, removed unnecessary bit arithmetic, and fixed some `-Weffc++` warnings.
+- [Krzysztof Woś](https://github.com/krzysztofwos) made exceptions more visible.
+- [ftillier](https://github.com/ftillier) fixed a compiler warning.
+- [tinloaf](https://github.com/tinloaf) made sure all pushed warnings are properly popped.
+- [Fytch](https://github.com/Fytch) found a bug in the documentation.
+- [Jay Sistar](https://github.com/Type1J) implemented a Meson build description
+- [Henry Lee](https://github.com/HenryRLee) fixed a warning in ICC
 
 Thanks a lot for helping out! Please [let me know](mailto:mail@nlohmann.me) if I forgot someone.
 
 
 ## Used third-party tools
 
-The library itself contains of a single header file licensed under the MIT license. However, it is built, tested, documented, and whatnot using a lot of thirs-party tools and services. Thanks a lot!
+The library itself contains of a single header file licensed under the MIT license. However, it is built, tested, documented, and whatnot using a lot of third-party tools and services. Thanks a lot!
 
 - [**American fuzzy lop**](http://lcamtuf.coredump.cx/afl/) for fuzz testing
 - [**AppVeyor**](https://www.appveyor.com) for [continuous integration](https://ci.appveyor.com/project/nlohmann/json) on Windows
@@ -855,7 +867,6 @@ The library itself contains of a single header file licensed under the MIT licen
 - [**Github Changelog Generator**](https://github.com/skywinder/github-changelog-generator) to generate the [ChangeLog](https://github.com/nlohmann/json/blob/develop/ChangeLog.md)
 - [**libFuzzer**](http://llvm.org/docs/LibFuzzer.html) to implement fuzz testing for OSS-Fuzz
 - [**OSS-Fuzz**](https://github.com/google/oss-fuzz) for continuous fuzz testing of the library
-- [**re2c**](http://re2c.org) to generate an automaton for the lexical analysis
 - [**send_to_wandbox**](https://github.com/nlohmann/json/blob/develop/doc/scripts/send_to_wandbox.py) to send code examples to [Wandbox](http://melpon.org/wandbox)
 - [**Travis**](https://travis-ci.org) for [continuous integration](https://travis-ci.org/nlohmann/json) on Linux and macOS
 - [**Valgrind**](http://valgrind.org) to check for correct memory management
@@ -878,7 +889,7 @@ The library is currently used in Apple macOS Sierra and iOS 10. I am not sure wh
   - Invalid surrogates (e.g., incomplete pairs such as `\uDEAD`) will yield parse errors.
   - The strings stored in the library are UTF-8 encoded. When using the default string type (`std::string`), note that its length/size functions return the number of stored bytes rather than the number of characters or glyphs.
 - The code can be compiled without C++ **runtime type identification** features; that is, you can use the `-fno-rtti` compiler flag.
-- **Exceptions** are used widly within the library. They can, however, be switched off with either using the compiler flag `-fno-exceptions` or by defining the symbol `JSON_NOEXCEPTION`. In this case, exceptions are replaced by an `abort()` call.
+- **Exceptions** are used widely within the library. They can, however, be switched off with either using the compiler flag `-fno-exceptions` or by defining the symbol `JSON_NOEXCEPTION`. In this case, exceptions are replaced by an `abort()` call.
 - By default, the library does not preserve the **insertion order of object elements**. This is standards-compliant, as the [JSON standard](https://tools.ietf.org/html/rfc7159.html) defines objects as "an unordered collection of zero or more name/value pairs". If you do want to preserve the insertion order, you can specialize the object type with containers like [`tsl::ordered_map`](https://github.com/Tessil/ordered-map) or [`nlohmann::fifo_map`](https://github.com/nlohmann/fifo_map).
 
 
@@ -891,7 +902,7 @@ $ make json_unit -Ctest
 $ ./test/json_unit "*"
 
 ===============================================================================
-All tests passed (11202597 assertions in 47 test cases)
+All tests passed (13391115 assertions in 49 test cases)
 ```
 
 Alternatively, you can use [CMake](https://cmake.org) and run

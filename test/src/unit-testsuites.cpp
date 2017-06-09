@@ -77,9 +77,27 @@ TEST_CASE("compliance tests from json.org")
                 })
         {
             CAPTURE(filename);
-            json j;
             std::ifstream f(filename);
-            CHECK_THROWS_AS(j << f, json::parse_error);
+            CHECK_THROWS_AS(json::parse(f), json::parse_error);
+        }
+    }
+
+    SECTION("no failures with trailing literals (relaxed)")
+    {
+        // these tests fail above, because the parser does not end on EOF;
+        // they succeed when the operator>> is used, because it does not
+        // have this constraint
+        for (auto filename :
+                {
+                    "test/data/json_tests/fail7.json",
+                    "test/data/json_tests/fail8.json",
+                    "test/data/json_tests/fail10.json",
+                })
+        {
+            CAPTURE(filename);
+            std::ifstream f(filename);
+            json j;
+            CHECK_NOTHROW(f >> j);
         }
     }
 
@@ -93,9 +111,9 @@ TEST_CASE("compliance tests from json.org")
                 })
         {
             CAPTURE(filename);
-            json j;
             std::ifstream f(filename);
-            CHECK_NOTHROW(j << f);
+            json j;
+            CHECK_NOTHROW(f >> j);
         }
     }
 }
@@ -305,6 +323,7 @@ TEST_CASE("compliance tests from nativejson-benchmark")
             std::string json_string( (std::istreambuf_iterator<char>(f) ),
                                      (std::istreambuf_iterator<char>()) );
 
+            CAPTURE(json_string);
             json j = json::parse(json_string);
             CHECK(j.dump() == json_string);
         }
@@ -319,7 +338,7 @@ TEST_CASE("test suite from json-test-suite")
         // strings in a JSON array
         std::ifstream f("test/data/json_testsuite/sample.json");
         json j;
-        CHECK_NOTHROW(j << f);
+        CHECK_NOTHROW(f >> j);
 
         // the array has 3 elements
         CHECK(j.size() == 3);
@@ -334,35 +353,35 @@ TEST_CASE("json.org examples")
     {
         std::ifstream f("test/data/json.org/1.json");
         json j;
-        CHECK_NOTHROW(j << f);
+        CHECK_NOTHROW(f >> j);
     }
 
     SECTION("2.json")
     {
         std::ifstream f("test/data/json.org/2.json");
         json j;
-        CHECK_NOTHROW(j << f);
+        CHECK_NOTHROW(f >> j);
     }
 
     SECTION("3.json")
     {
         std::ifstream f("test/data/json.org/3.json");
         json j;
-        CHECK_NOTHROW(j << f);
+        CHECK_NOTHROW(f >> j);
     }
 
     SECTION("4.json")
     {
         std::ifstream f("test/data/json.org/4.json");
         json j;
-        CHECK_NOTHROW(j << f);
+        CHECK_NOTHROW(f >> j);
     }
 
     SECTION("5.json")
     {
         std::ifstream f("test/data/json.org/5.json");
         json j;
-        CHECK_NOTHROW(j << f);
+        CHECK_NOTHROW(f >> j);
     }
 }
 
@@ -545,7 +564,7 @@ TEST_CASE("nst's JSONTestSuite")
                 CAPTURE(filename);
                 std::ifstream f(filename);
                 json j;
-                CHECK_NOTHROW(j << f);
+                CHECK_NOTHROW(f >> j);
             }
         }
 
@@ -753,8 +772,40 @@ TEST_CASE("nst's JSONTestSuite")
             {
                 CAPTURE(filename);
                 std::ifstream f(filename);
+                CHECK_THROWS_AS(json::parse(f), json::parse_error);
+            }
+        }
+
+        SECTION("n -> y (relaxed)")
+        {
+            // these tests fail above, because the parser does not end on EOF;
+            // they succeed when the operator>> is used, because it does not
+            // have this constraint
+            for (auto filename :
+                    {
+                        "test/data/nst_json_testsuite/test_parsing/n_array_comma_after_close.json",
+                        "test/data/nst_json_testsuite/test_parsing/n_array_extra_close.json",
+                        "test/data/nst_json_testsuite/test_parsing/n_object_trailing_comment.json",
+                        "test/data/nst_json_testsuite/test_parsing/n_object_trailing_comment_open.json",
+                        "test/data/nst_json_testsuite/test_parsing/n_object_trailing_comment_slash_open.json",
+                        "test/data/nst_json_testsuite/test_parsing/n_object_trailing_comment_slash_open_incomplete.json",
+                        "test/data/nst_json_testsuite/test_parsing/n_object_with_trailing_garbage.json",
+                        "test/data/nst_json_testsuite/test_parsing/n_string_with_trailing_garbage.json",
+                        "test/data/nst_json_testsuite/test_parsing/n_structure_array_trailing_garbage.json",
+                        "test/data/nst_json_testsuite/test_parsing/n_structure_array_with_extra_array_close.json",
+                        "test/data/nst_json_testsuite/test_parsing/n_structure_close_unopened_array.json",
+                        "test/data/nst_json_testsuite/test_parsing/n_structure_double_array.json",
+                        "test/data/nst_json_testsuite/test_parsing/n_structure_number_with_trailing_garbage.json",
+                        "test/data/nst_json_testsuite/test_parsing/n_structure_object_followed_by_closing_object.json",
+                        "test/data/nst_json_testsuite/test_parsing/n_structure_object_with_trailing_garbage.json",
+                        "test/data/nst_json_testsuite/test_parsing/n_structure_trailing_#.json"
+                    }
+                )
+            {
+                CAPTURE(filename);
+                std::ifstream f(filename);
                 json j;
-                CHECK_THROWS_AS(j << f, json::parse_error);
+                CHECK_NOTHROW(f >> j);
             }
         }
 
@@ -777,7 +828,7 @@ TEST_CASE("nst's JSONTestSuite")
                 CAPTURE(filename);
                 std::ifstream f(filename);
                 json j;
-                CHECK_NOTHROW(j << f);
+                CHECK_NOTHROW(f >> j);
             }
         }
 
@@ -797,7 +848,7 @@ TEST_CASE("nst's JSONTestSuite")
                 CAPTURE(filename);
                 std::ifstream f(filename);
                 json j;
-                CHECK_THROWS_AS(j << f, json::out_of_range);
+                CHECK_THROWS_AS(f >> j, json::out_of_range);
             }
         }
 
@@ -824,7 +875,7 @@ TEST_CASE("nst's JSONTestSuite")
                 CAPTURE(filename);
                 std::ifstream f(filename);
                 json j;
-                CHECK_THROWS_AS(j << f, json::parse_error);
+                CHECK_THROWS_AS(f >> j, json::parse_error);
             }
         }
     }
@@ -851,7 +902,7 @@ TEST_CASE("Big List of Naughty Strings")
     {
         std::ifstream f("test/data/big-list-of-naughty-strings/blns.json");
         json j;
-        CHECK_NOTHROW(j << f);
+        CHECK_NOTHROW(f >> j);
     }
 
     // check if parsed strings roundtrip
